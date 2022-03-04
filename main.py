@@ -9,7 +9,17 @@ import requests as r
 
 from sender import check_connection, format_number, get_new_browser, _send
 
-API_LINK = 'https://mitryp.com.ua/war/api/'
+
+__version__ = 1.0.0
+
+# Enter your API links here:
+API_LINK = ''
+API_GET_LINK_BODY = ''
+API_REPORT_LINK_BODY = ''
+# A text response from URL `{API_LINK}/{API_GET_LINK_BODY}{number}` will be used to get count of messages sent 
+# to the certain number;
+# A request to URL `{API_LINK}/{API_REPORT_LINK_BODY}{number}` will be used to report message sending;
+# If you don't want to use the API to count messages centrally, just leave that constants unchanged.
 
 if __name__ == '__main__':
     # Get CLI arguments
@@ -64,17 +74,18 @@ if __name__ == '__main__':
         print('No message provided or the message file does not exist.')
         exit(1)
 
-    # Check connection to WhatsApp and to the API
-    # If the API is unavailable, uses the --force flag
+    # Check connection to WhatsApp
     print('Trying to resolve https://web.whatsapp.com/')
     if check_connection():
         print("Success!")
     else:
         print("No connection to WhatsApp.")
         exit(1)
+
+    # Check connection to the API
+    # If the API is unavailable, uses the --force flag
     try:
-        if int(r.get(API_LINK + 'count?number=0').text) != 0:
-            args.force = True
+        r.get(API_LINK)
     except r.RequestException:
         args.force = True
 
@@ -98,15 +109,16 @@ if __name__ == '__main__':
             time.sleep(args.timeout)
 
         try:
-            if args.force or int(r.get(API_LINK + f'count?number={format_number(number)}').text) < args.message_limit:
+            if args.force or int(r.get(f'{API_LINK}/{API_GET_LINK_BODY}{format_number(number)}').text) < args.message_limit:
                 print("Trying to send message", '->', number)
                 _send(number, message, browser)
                 messages_sent += 1
-                try:
-                    r.get(API_LINK + f'report?number={format_number(number)}')
-                    print('Message reported')
-                except r.RequestException:
-                    print('Reporting failed')
+                if len(API_LINK) > 0:
+                    try:
+                        r.get(f'{API_LINK}/{API_REPORT_LINK_BODY}{format_number(number)}')
+                        print('Message reported')
+                    except r.RequestException:
+                        print('Reporting failed')
 
             else:
                 print('Didn\'t send message to number', number)
