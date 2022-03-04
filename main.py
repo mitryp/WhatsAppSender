@@ -10,7 +10,7 @@ import requests as r
 from sender import check_connection, format_number, get_new_browser, _send
 
 
-__version__ = 1.0.0
+__version__ = '1.0.0'
 
 # Enter your API links here:
 API_LINK = ''
